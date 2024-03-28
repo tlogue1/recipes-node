@@ -9,6 +9,7 @@ const getRecipes = async() => {
 const showRecipes = async() => {
     const recipes = await getRecipes();
     const recipesDiv = document.getElementById("recipe-list");
+    recipesDiv.innerHTML = "";
 
     recipes.forEach((recipe)=>{
         const section = document.createElement("section");
@@ -74,6 +75,7 @@ const openDialog = (id) => {
 
 const showRecipeForm = (e) => {
     e.preventDefault();
+    resetForm();
     openDialog("add-recipe-form");
 }
 
@@ -83,9 +85,60 @@ const addIngredient = (e) => {
     const input = document.createElement("input");
     input.type = "text";
     section.append(input);
+}
 
+const resetForm = () => {
+    const form = document.getElementById("add-recipe-form");
+    form.reset();
+    document.getElementById("ingredient-boxes").innerHTML = "";
+    document.getElementById("img-prev").src = "";
+};
+
+const addRecipe = async(e) => {
+    e.preventDefault();
+    const form = document.getElementById("add-recipe-form");
+    const formData = new FormData(form);
+    formData.append("ingredients", getIngredients());
+    console.log(...formData);//the "..." displays each of the different fields separately
+
+    const response = await fetch("/api/recipes", {
+        method: "POST",
+        body: formData
+    });
+
+    if (response.status != 200){
+        console.log("not getting it");
+    }
+
+    await response.json();
+    resetForm();
+    document.getElementById("dialog").style.display = "none";
+    showRecipes();
+
+};
+
+const getIngredients = () => {
+    const inputs = document.querySelectorAll("#ingredient-boxes input");
+    const ingredients = [];
+    inputs.forEach((input)=> {
+        ingredients.push(input.value);
+    });
+
+    return ingredients;
 }
 
 showRecipes();
+document.getElementById("add-recipe-form").onsubmit = addRecipe;
 document.getElementById("add-link").onclick = showRecipeForm;
 document.getElementById("add-ingredient").onclick = addIngredient;
+document.getElementById("img").onchange = (e) => {
+    const prev = document.getElementById("img-prev");
+
+    //they didnt pick an image
+    if(!e.target.files.length){
+        prev.src = "";
+        return;
+    }
+
+    prev.src = URL.createObjectURL(e.target.files.item(0));
+}
